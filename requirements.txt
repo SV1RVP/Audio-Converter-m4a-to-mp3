@@ -1,0 +1,3 @@
+tkinterdnd2==0.6.2 \
+    --hash=sha256:b6a8b229d26286c022bb2fbd311c2e431e4d9bbab8133be80e9c98e7bcf9fe59 \
+    --hash=sha256:e015c2d863c9292e61d0294dea43010ff99c3cc9423e564676e04df413de9916

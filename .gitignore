@@ -1,0 +1,24 @@
+.venv/
+__pycache__/
+*.pyc
+
+# FFmpeg binaries are downloaded by install.ps1 and are not stored in Git.
+ffmpeg.exe
+ffprobe.exe
+ffplay.exe
+
+# User audio/output files
+*.m4a
+*.mp3
+*.wav
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Installer temporary files
+*.zip
+*.tmp
