@@ -23,7 +23,7 @@ except ImportError:
     TkinterDnD = None
 
 
-APP_VERSION = "1.3.2"
+APP_VERSION = "1.3.3"
 # Configurable GitHub Repository (Owner/Repo ή URL). Μπορεί να τροποποιηθεί άμεσα.
 GITHUB_REPO = "SV1RVP/Audio-Converter-m4a-to-mp3"
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -76,6 +76,9 @@ TRANSLATIONS = {
         "checking_updates": "🔄 Checking...",
         "theme_light": "☀ Light",
         "theme_dark": "☾ Dark",
+        "theme_auto": "⚙ Auto (System)",
+        "theme_btn_auto": "⚙ Auto",
+        "menu_theme": "Theme",
         "lang_name": "English",
         "lang_toggle_btn": "🇺🇸 EN",
         "card_files": "  1  Files to convert  ",
@@ -177,6 +180,9 @@ TRANSLATIONS = {
         "checking_updates": "🔄 Έλεγχος...",
         "theme_light": "☀ Φωτεινό",
         "theme_dark": "☾ Σκούρο",
+        "theme_auto": "⚙ Αυτόματο (Σύστημα)",
+        "theme_btn_auto": "⚙ Αυτόματο",
+        "menu_theme": "Θέμα",
         "lang_name": "Ελληνικά",
         "lang_toggle_btn": "🇬🇷 ΕΛ",
         "card_files": "  1  Αρχεία προς μετατροπή  ",
@@ -307,6 +313,43 @@ THEMES = {
 }
 
 
+def get_windows_system_theme() -> str:
+    """Detects whether Windows is currently using Dark or Light mode for applications."""
+    try:
+        import winreg
+
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+        )
+        val, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+        winreg.CloseKey(key)
+        return "light" if val != 0 else "dark"
+    except Exception:
+        return "light"
+
+
+def apply_windows_titlebar_theme(window, is_dark: bool):
+    """Sets the Windows native title bar to dark or light mode on Windows 10/11."""
+    try:
+        import ctypes
+
+        window.update_idletasks()
+        hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
+        if not hwnd:
+            hwnd = window.winfo_id()
+        val = ctypes.c_int(1 if is_dark else 0)
+        res = ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            hwnd, 20, ctypes.byref(val), ctypes.sizeof(val)
+        )
+        if res != 0:
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                hwnd, 19, ctypes.byref(val), ctypes.sizeof(val)
+            )
+    except Exception:
+        pass
+
+
 class ConversionCanceled(Exception):
     pass
 
@@ -352,9 +395,13 @@ class AudioConverterApp:
             value=get_bitrate_display(self.current_bitrate_code, self.language)
         )
 
-        self.theme_name = settings.get("theme", "light")
-        if self.theme_name not in THEMES:
-            self.theme_name = "light"
+        self.theme_mode = settings.get("theme", "auto")
+        if self.theme_mode not in ("auto", "dark", "light"):
+            self.theme_mode = "auto"
+        self.theme_var = tk.StringVar(value=self.theme_mode)
+        self.theme_name = (
+            get_windows_system_theme() if self.theme_mode == "auto" else self.theme_mode
+        )
 
         self.status_text = tk.StringVar(value=self.t("status_default"))
         self.progress_text = tk.StringVar(value="0%")
@@ -377,6 +424,7 @@ class AudioConverterApp:
         self.toggle_bitrate_options()
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.root.after(100, self.poll_worker_messages)
+        self.root.after(2000, self._poll_system_theme)
         self.root.after(2500, lambda: self.check_for_updates_ui(silent=True))
 
     def t(self, key: str, **kwargs) -> str:
@@ -400,7 +448,7 @@ class AudioConverterApp:
     def save_settings(self):
         data = {
             "language": self.language,
-            "theme": self.theme_name,
+            "theme": self.theme_mode,
             "target_format": self.target_format.get(),
             "selected_bitrate": self.current_bitrate_code,
             "output_directory": self.output_directory.get().strip(),
@@ -431,6 +479,28 @@ class AudioConverterApp:
         )
         self.menu_bar.add_cascade(label=self.t("menu_language"), menu=self.lang_menu)
 
+        # Theme selection menu
+        self.theme_menu = tk.Menu(self.menu_bar, tearoff=False)
+        self.theme_menu.add_radiobutton(
+            label=self.t("theme_auto"),
+            value="auto",
+            variable=self.theme_var,
+            command=lambda: self.set_theme("auto"),
+        )
+        self.theme_menu.add_radiobutton(
+            label=self.t("theme_dark"),
+            value="dark",
+            variable=self.theme_var,
+            command=lambda: self.set_theme("dark"),
+        )
+        self.theme_menu.add_radiobutton(
+            label=self.t("theme_light"),
+            value="light",
+            variable=self.theme_var,
+            command=lambda: self.set_theme("light"),
+        )
+        self.menu_bar.add_cascade(label=self.t("menu_theme"), menu=self.theme_menu)
+
         # Help menu
         self.help_menu = tk.Menu(self.menu_bar, tearoff=False)
         self.help_menu.add_command(
@@ -446,7 +516,11 @@ class AudioConverterApp:
     def update_menu_texts(self):
         try:
             self.menu_bar.entryconfigure(0, label=self.t("menu_language"))
-            self.menu_bar.entryconfigure(1, label=self.t("menu_help"))
+            self.menu_bar.entryconfigure(1, label=self.t("menu_theme"))
+            self.theme_menu.entryconfigure(0, label=self.t("theme_auto"))
+            self.theme_menu.entryconfigure(1, label=self.t("theme_dark"))
+            self.theme_menu.entryconfigure(2, label=self.t("theme_light"))
+            self.menu_bar.entryconfigure(2, label=self.t("menu_help"))
             self.help_menu.entryconfigure(0, label=self.t("menu_check_updates"))
             self.help_menu.entryconfigure(2, label=self.t("menu_about"))
         except Exception:
@@ -470,9 +544,7 @@ class AudioConverterApp:
             self.header_title.configure(text=self.t("app_name"))
         self.header_subtitle.configure(text=self.t("subtitle"))
         self.lang_button.configure(text=self.t("lang_toggle_btn"))
-        self.theme_button.configure(
-            text=self.t("theme_light" if self.theme_name == "dark" else "theme_dark")
-        )
+        self.theme_button.configure(text=self.get_theme_button_text())
         if hasattr(self, "update_button") and not self.update_button.cget("text").startswith("⚡"):
             self.update_button.configure(text=self.t("check_updates"))
 
@@ -786,10 +858,16 @@ class AudioConverterApp:
         )
 
     def apply_theme(self):
+        if self.theme_mode == "auto":
+            self.theme_name = get_windows_system_theme()
+        else:
+            self.theme_name = self.theme_mode
+
         colors = THEMES[self.theme_name]
         self.colors = colors
         self.style.theme_use("clam")
         self.root.configure(background=colors["bg"])
+        apply_windows_titlebar_theme(self.root, self.theme_name == "dark")
 
         self.style.configure(
             ".",
@@ -953,7 +1031,7 @@ class AudioConverterApp:
         self.file_tree.tag_configure("active", foreground=colors["accent"])
         self.file_tree.tag_configure("canceled", foreground=colors["muted"])
 
-        for menu in (self.menu_bar, self.help_menu):
+        for menu in (self.menu_bar, self.lang_menu, self.theme_menu, self.help_menu):
             menu.configure(
                 background=colors["card"],
                 foreground=colors["text"],
@@ -961,17 +1039,43 @@ class AudioConverterApp:
                 activeforeground="#ffffff",
             )
 
-        self.theme_button.configure(
-            text=self.t("theme_light" if self.theme_name == "dark" else "theme_dark")
-        )
+        self.theme_button.configure(text=self.get_theme_button_text())
         self.lang_button.configure(
             text=self.t("lang_toggle_btn")
         )
 
-    def toggle_theme(self):
-        self.theme_name = "dark" if self.theme_name == "light" else "light"
+    def get_theme_button_text(self) -> str:
+        if self.theme_mode == "auto":
+            indicator = " ☾" if self.theme_name == "dark" else " ☀"
+            return f"{self.t('theme_btn_auto')}{indicator}"
+        elif self.theme_mode == "dark":
+            return self.t("theme_dark")
+        else:
+            return self.t("theme_light")
+
+    def set_theme(self, mode: str):
+        if mode not in ("auto", "dark", "light"):
+            mode = "auto"
+        self.theme_mode = mode
+        self.theme_var.set(mode)
         self.apply_theme()
         self.save_settings()
+
+    def toggle_theme(self):
+        cycle = {"auto": "dark", "dark": "light", "light": "auto"}
+        new_mode = cycle.get(self.theme_mode, "auto")
+        self.set_theme(new_mode)
+
+    def _poll_system_theme(self):
+        try:
+            if self.theme_mode == "auto":
+                sys_theme = get_windows_system_theme()
+                if sys_theme != self.theme_name:
+                    self.apply_theme()
+        except Exception:
+            pass
+        finally:
+            self.root.after(2000, self._poll_system_theme)
 
     def check_for_updates_ui(self, silent: bool = False):
         if updater is None:
@@ -1023,6 +1127,7 @@ class AudioConverterApp:
         dialog.transient(self.root)
         dialog.grab_set()
         dialog.configure(bg=colors["bg"])
+        apply_windows_titlebar_theme(dialog, self.theme_name == "dark")
 
         try:
             x = self.root.winfo_x() + (self.root.winfo_width() - 520) // 2

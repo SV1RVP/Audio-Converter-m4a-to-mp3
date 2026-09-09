@@ -37,7 +37,7 @@ def get_local_version() -> str:
             return VERSION_FILE.read_text(encoding="utf-8").strip()
     except Exception as e:
         logger.error("Error reading VERSION file: %s", e)
-    return "1.3.2"
+    return "1.3.3"
 
 
 def parse_semver(version_str: str) -> Tuple[int, ...]:
