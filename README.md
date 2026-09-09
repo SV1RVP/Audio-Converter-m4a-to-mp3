@@ -5,7 +5,7 @@
 # ♫ Audio Converter m4a to mp3 🎧
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.3.1-emerald.svg)](VERSION)
+[![Version](https://img.shields.io/badge/Version-1.3.2-emerald.svg)](VERSION)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-purple.svg)]()
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
 

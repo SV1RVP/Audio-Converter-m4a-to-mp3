@@ -37,7 +37,7 @@ def get_local_version() -> str:
             return VERSION_FILE.read_text(encoding="utf-8").strip()
     except Exception as e:
         logger.error("Error reading VERSION file: %s", e)
-    return "1.3.1"
+    return "1.3.2"
 
 
 def parse_semver(version_str: str) -> Tuple[int, ...]:
@@ -217,56 +217,68 @@ def download_and_launch_updater(
                     if progress_callback and total_size > 0:
                         progress_callback(int((downloaded / total_size) * 100))
 
+        # Localized console messages for the helper script
+        title_text = "Audio Converter m4a to mp3 - Update" if lang == "en" else "Audio Converter m4a to mp3 - Ενημέρωση"
+        step1_text = "Waiting for application to exit..." if lang == "en" else "Αναμονή για τερματισμό της εφαρμογής..."
+        step2_text = "Extracting update archive..." if lang == "en" else "Εξαγωγή αρχείων ενημέρωσης..."
+        step3_text = "Applying update files..." if lang == "en" else "Αντιγραφή νέων αρχείων κώδικα..."
+        step4_text = "Cleaning up temporary files..." if lang == "en" else "Καθαρισμός προσωρινών αρχείων..."
+        ok_text = "Update completed successfully!" if lang == "en" else "Η ενημέρωση ολοκληρώθηκε επιτυχώς!"
+        restart_text = "Restarting application..." if lang == "en" else "Επανεκκίνηση εφαρμογής..."
+        err_extract = "Could not find extracted update folder." if lang == "en" else "Αποτυχία εύρεσης αποσυμπιεσμένων αρχείων."
+        err_copy = "File copy failed with error code !errorlevel!. See update.log for details." if lang == "en" else "Η αντιγραφή απέτυχε με κωδικό !errorlevel!. Δείτε το update.log."
+
         # Create Windows update runner batch script
         script_content = f"""@echo off
+setlocal enabledelayedexpansion
 chcp 65001 >nul
-title Audio Converter m4a to mp3 - Ενημέρωση Εφαρμογής
+title {title_text}
 cd /d "{target_dir}"
 
 echo ============================================================
-echo      Audio Converter m4a to mp3 - Εφαρμογή Ενημέρωσης
+echo      {title_text}
 echo ============================================================
 echo.
-echo Αναμονή για τερματισμό της εφαρμογής...
+echo [1/4] {step1_text}
 timeout /t 2 /nobreak > nul
 
-echo Εξαγωγή αρχείων ενημέρωσης...
+echo [2/4] {step2_text}
 if exist "_update_extract" rmdir /s /q "_update_extract"
-powershell.exe -NoProfile -Command "Expand-Archive -Path '{zip_file.name}' -DestinationPath '_update_extract' -Force"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Path '{zip_file.name}' -DestinationPath '_update_extract' -Force"
 
 set "SRC_DIR="
 for /d %%d in ("_update_extract\\*") do (
     set "SRC_DIR=%%d"
 )
 
-if defined SRC_DIR (
-    echo Αντιγραφή νέων αρχείων κώδικα...
-    REM Copy code and document files, excluding binaries and user environment
-    xcopy /y /e /q "!SRC_DIR!\\*.py" "." >nul 2>&1
-    xcopy /y /e /q "!SRC_DIR!\\*.md" "." >nul 2>&1
-    xcopy /y /e /q "!SRC_DIR!\\*.bat" "." >nul 2>&1
-    xcopy /y /q "!SRC_DIR!\\VERSION" "." >nul 2>&1
-    xcopy /y /q "!SRC_DIR!\\pyproject.toml" "." >nul 2>&1
-    xcopy /y /q "!SRC_DIR!\\requirements.txt" "." >nul 2>&1
-    xcopy /y /q "!SRC_DIR!\\.gitignore" "." >nul 2>&1
-    xcopy /y /q "!SRC_DIR!\\.gitattributes" "." >nul 2>&1
-    if exist "install.ps1" del /f /q "install.ps1" >nul 2>&1
-    if exist "run.ps1" del /f /q "run.ps1" >nul 2>&1
-    echo [OK] Η ενημέρωση εφαρμόστηκε επιτυχώς!
-) else (
-    echo [ERROR] Αποτυχία εύρεσης αποσυμπιεσμένων αρχείων.
+if not defined SRC_DIR (
+    echo [ERROR] {err_extract}
     pause
     exit /b 1
 )
 
-echo Καθαρισμός προσωρινών αρχείων...
+echo [3/4] {step3_text}
+REM Robocopy synchronizes code, assets, and docs while preserving user environment and settings
+robocopy "!SRC_DIR!" "." /E /XF ffmpeg.exe ffprobe.exe settings.json update_package.zip update_helper.bat /XD .venv _update_extract /R:2 /W:1 > update.log
+if !errorlevel! geq 8 (
+    echo [ERROR] {err_copy}
+    pause
+    exit /b 1
+)
+
+if exist "install.ps1" del /f /q "install.ps1" >nul 2>&1
+if exist "run.ps1" del /f /q "run.ps1" >nul 2>&1
+
+echo [4/4] {step4_text}
 if exist "{zip_file.name}" del /f /q "{zip_file.name}" >nul 2>&1
 if exist "_update_extract" rmdir /s /q "_update_extract" >nul 2>&1
 
-echo Επανεκκίνηση εφαρμογής...
+echo.
+echo [OK] {ok_text}
+echo {restart_text}
 timeout /t 1 /nobreak > nul
 start "" run.bat
-(goto) 2>nul & del "update_helper.bat" & exit
+(goto) 2>nul & del "%~f0" & exit
 """
         helper_bat.write_text(script_content, encoding="utf-8")
 

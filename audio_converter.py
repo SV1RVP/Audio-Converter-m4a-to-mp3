@@ -23,7 +23,7 @@ except ImportError:
     TkinterDnD = None
 
 
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.3.2"
 # Configurable GitHub Repository (Owner/Repo ή URL). Μπορεί να τροποποιηθεί άμεσα.
 GITHUB_REPO = "SV1RVP/Audio-Converter-m4a-to-mp3"
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
