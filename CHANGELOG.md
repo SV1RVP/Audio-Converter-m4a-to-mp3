@@ -15,7 +15,8 @@
 
 ### Fixed
 
-- Επίλυση σφάλματος ανάγνωσης κωδικοποίησης (CP1253/ANSI UnexpectedToken) στο Windows PowerShell 5.1 κατά την εκτέλεση του `install.bat`. Τα scripts εγκατάστασης και εκκίνησης (`install.ps1`, `run.ps1`) διαθέτουν πλέον πλήρη συμβατότητα με οποιαδήποτε γλώσσα συστήματος Windows.
+- Επίλυση σφάλματος ανάγνωσης κωδικοποίησης (CP1253/ANSI UnexpectedToken) στο Windows PowerShell 5.1.
+- Ενοποίηση όλης της λογικής εγκατάστασης και εκκίνησης απευθείας μέσα στα `install.bat` και `run.bat` ως πλήρως αυτόνομα (self-contained) hybrid scripts. Τα ξεχωριστά αρχεία `install.ps1` και `run.ps1` αφαιρέθηκαν οριστικά από το project.
 
 ## [1.2.0] - 2026-08-19
 

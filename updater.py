@@ -245,12 +245,13 @@ if defined SRC_DIR (
     xcopy /y /e /q "!SRC_DIR!\\*.py" "." >nul 2>&1
     xcopy /y /e /q "!SRC_DIR!\\*.md" "." >nul 2>&1
     xcopy /y /e /q "!SRC_DIR!\\*.bat" "." >nul 2>&1
-    xcopy /y /e /q "!SRC_DIR!\\*.ps1" "." >nul 2>&1
     xcopy /y /q "!SRC_DIR!\\VERSION" "." >nul 2>&1
     xcopy /y /q "!SRC_DIR!\\pyproject.toml" "." >nul 2>&1
     xcopy /y /q "!SRC_DIR!\\requirements.txt" "." >nul 2>&1
     xcopy /y /q "!SRC_DIR!\\.gitignore" "." >nul 2>&1
     xcopy /y /q "!SRC_DIR!\\.gitattributes" "." >nul 2>&1
+    if exist "install.ps1" del /f /q "install.ps1" >nul 2>&1
+    if exist "run.ps1" del /f /q "run.ps1" >nul 2>&1
     echo [OK] Η ενημέρωση εφαρμόστηκε επιτυχώς!
 ) else (
     echo [ERROR] Αποτυχία εύρεσης αποσυμπιεσμένων αρχείων.
