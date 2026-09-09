@@ -23,7 +23,7 @@ except ImportError:
     TkinterDnD = None
 
 
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 # Configurable GitHub Repository (Owner/Repo ή URL). Μπορεί να τροποποιηθεί άμεσα.
 GITHUB_REPO = "SV1RVP/Audio-Converter-m4a-to-mp3"
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -77,7 +77,7 @@ TRANSLATIONS = {
         "theme_light": "☀ Light",
         "theme_dark": "☾ Dark",
         "lang_name": "English",
-        "lang_toggle_btn": "🇬🇧 EN",
+        "lang_toggle_btn": "🇺🇸 EN",
         "card_files": "  1  Files to convert  ",
         "drop_text_dnd": "Drag and drop M4A files or folders here",
         "drop_text_nodnd": "Select one or more M4A files",
@@ -178,7 +178,7 @@ TRANSLATIONS = {
         "theme_light": "☀ Φωτεινό",
         "theme_dark": "☾ Σκούρο",
         "lang_name": "Ελληνικά",
-        "lang_toggle_btn": "🇬🇷 EL",
+        "lang_toggle_btn": "🇬🇷 ΕΛ",
         "card_files": "  1  Αρχεία προς μετατροπή  ",
         "drop_text_dnd": "Σύρε εδώ αρχεία ή φακέλους M4A",
         "drop_text_nodnd": "Επίλεξε ένα ή περισσότερα αρχεία M4A",
@@ -334,6 +334,15 @@ class AudioConverterApp:
         self.root.geometry("920x730")
         self.root.minsize(800, 650)
 
+        # Set window icon if available
+        logo_png_path = os.path.join(self.script_dir, "assets", "logo.png")
+        if os.path.exists(logo_png_path):
+            try:
+                self._app_icon = tk.PhotoImage(file=logo_png_path)
+                self.root.iconphoto(True, self._app_icon)
+            except Exception:
+                pass
+
         self.output_directory = tk.StringVar(value=settings.get("output_directory", ""))
         self.target_format = tk.StringVar(value=settings.get("target_format", "MP3"))
 
@@ -409,13 +418,13 @@ class AudioConverterApp:
         # Language selection menu
         self.lang_menu = tk.Menu(self.menu_bar, tearoff=False)
         self.lang_menu.add_radiobutton(
-            label="English (🇬🇧)",
+            label="EN (🇺🇸)",
             value="en",
             variable=self.lang_var,
             command=lambda: self.set_language("en"),
         )
         self.lang_menu.add_radiobutton(
-            label="Ελληνικά (🇬🇷)",
+            label="ΕΛ (🇬🇷)",
             value="el",
             variable=self.lang_var,
             command=lambda: self.set_language("el"),
@@ -521,9 +530,20 @@ class AudioConverterApp:
         header.grid(row=0, column=0, sticky="ew", pady=(0, 14))
         header.columnconfigure(1, weight=1)
 
-        ttk.Label(header, text="♫", style="Logo.TLabel").grid(
-            row=0, column=0, rowspan=2, padx=(0, 12)
-        )
+        logo_path = os.path.join(self.script_dir, "assets", "logo.png")
+        if os.path.exists(logo_path):
+            try:
+                self.logo_image = tk.PhotoImage(file=logo_path).subsample(24, 24)
+                self.logo_label = ttk.Label(header, image=self.logo_image)
+                self.logo_label.grid(row=0, column=0, rowspan=2, padx=(0, 12))
+            except Exception:
+                ttk.Label(header, text="♫", style="Logo.TLabel").grid(
+                    row=0, column=0, rowspan=2, padx=(0, 12)
+                )
+        else:
+            ttk.Label(header, text="♫", style="Logo.TLabel").grid(
+                row=0, column=0, rowspan=2, padx=(0, 12)
+            )
         self.header_title = ttk.Label(header, text=self.t("app_name"), style="Title.TLabel")
         self.header_title.grid(
             row=0, column=1, sticky="w"

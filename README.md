@@ -1,14 +1,18 @@
+<p align="center">
+  <img src="assets/logo.png" width="180" height="180" alt="Audio Converter m4a to mp3 Logo" />
+</p>
+
 # ♫ Audio Converter m4a to mp3 🎧
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.3.0-emerald.svg)](VERSION)
+[![Version](https://img.shields.io/badge/Version-1.3.1-emerald.svg)](VERSION)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-purple.svg)]()
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
 
 **Creator:** Alexandros - Ermis Tsourapas (SV1RVP)  
 **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
 
-[🇬🇧 English](#-english) • [🇬🇷 Ελληνικά](#-ελληνικά)
+[🇺🇸 English](#-english) • [🇬🇷 Ελληνικά](#-ελληνικά)
 
 ---
 
@@ -90,8 +94,8 @@ The app natively supports:
 - **Ελληνικά** (Greek)
 
 Switch languages anytime:
-1. Click the toggle button in the top-right header (`🇬🇧 EN` / `🇬🇷 EL`).
-2. Via the menu bar: **Language** -> select **English** or **Ελληνικά**.
+1. Click the toggle button in the top-right header (`🇺🇸 EN` / `🇬🇷 ΕΛ`).
+2. Via the menu bar: **Language** -> select **EN (🇺🇸)** or **ΕΛ (🇬🇷)**.
 
 All UI components (buttons, labels, dialogs, queue columns, and status messages) update immediately without restarting.
 
@@ -208,8 +212,8 @@ Converted files are saved with the same base name and `.mp3` or `.wav` extension
 - **Ελληνικά** (Greek)
 
 Μπορείτε να αλλάξετε γλώσσα άμεσα με δύο τρόπους:
-1. Κάνοντας κλικ στο κουμπί εναλλαγής στην πάνω δεξιά γωνία (`🇬🇧 EN` / `🇬🇷 EL`).
-2. Από το κεντρικό μενού: **Language** / **Γλώσσα** -> **English** ή **Ελληνικά**.
+1. Κάνοντας κλικ στο κουμπί εναλλαγής στην πάνω δεξιά γωνία (`🇺🇸 EN` / `🇬🇷 ΕΛ`).
+2. Από το κεντρικό μενού: **Language** / **Γλώσσα** -> **EN (🇺🇸)** ή **ΕΛ (🇬🇷)**.
 
 Όλα τα στοιχεία του περιβάλλοντος (κουμπιά, ετικέτες, διάλογοι, μηνύματα ειδοποίησης και καταστάσεις αρχείων) μεταφράζονται δυναμικά χωρίς να απαιτείται επανεκκίνηση, και η προτίμηση αποθηκεύεται αυτόματα.
 
