@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Alexandros - Ermis Tsourapas (SV1RVP)
+﻿# Copyright (C) 2026 Alexandros - Ermis Tsourapas (SV1RVP)
 # SPDX-License-Identifier: AGPL-3.0-only
 
 $ErrorActionPreference = "Stop"
@@ -6,14 +6,22 @@ $ErrorActionPreference = "Stop"
 $OutputEncoding = [Console]::OutputEncoding
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$ProjectDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ProjectDir = $PSScriptRoot
+if (-not $ProjectDir) {
+    if ($MyInvocation.MyCommand.Path) {
+        $ProjectDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    } else {
+        $ProjectDir = (Get-Location).Path
+    }
+}
+
 $VenvDir = Join-Path $ProjectDir ".venv"
 $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
 $Requirements = Join-Path $ProjectDir "requirements.txt"
 $FfmpegZipUrl = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
 $FfmpegHashUrl = "$FfmpegZipUrl.sha256"
 $GitHubLatestReleaseApi = "https://api.github.com/repos/GyanD/codexffmpeg/releases/latest"
-$WebHeaders = @{ "User-Agent" = "AudioConverterPro-Installer/$((Get-Date).Year)" }
+$WebHeaders = @{ "User-Agent" = "AudioConverter-Installer/$((Get-Date).Year)" }
 
 function Invoke-DownloadWithRetry {
     param(
@@ -40,7 +48,7 @@ function Invoke-DownloadWithRetry {
             if ($attempt -eq $Attempts) {
                 throw
             }
-            Write-Host "  Η λήψη απέτυχε. Νέα προσπάθεια $($attempt + 1)/$Attempts..." -ForegroundColor Yellow
+            Write-Host "  Download failed. Retrying ($($attempt + 1)/$Attempts)..." -ForegroundColor Yellow
             Start-Sleep -Seconds (2 * $attempt)
         }
     }
@@ -57,7 +65,7 @@ function Invoke-GitHubApiWithRetry {
             if ($attempt -eq $Attempts) {
                 throw
             }
-            Write-Host "  Το GitHub API δεν απάντησε. Νέα προσπάθεια $($attempt + 1)/$Attempts..." -ForegroundColor Yellow
+            Write-Host "  GitHub API did not respond. Retrying ($($attempt + 1)/$Attempts)..." -ForegroundColor Yellow
             Start-Sleep -Seconds (2 * $attempt)
         }
     }
@@ -70,14 +78,14 @@ function Get-FfmpegPackage {
     )
 
     try {
-        Write-Host "Λήψη FFmpeg από gyan.dev..."
+        Write-Host "Downloading FFmpeg from gyan.dev..."
         Invoke-DownloadWithRetry -Uri $FfmpegZipUrl -OutFile $ArchivePath
         Invoke-DownloadWithRetry -Uri $FfmpegHashUrl -OutFile $HashPath
         return "gyan.dev"
     }
     catch {
-        Write-Host "Το gyan.dev δεν είναι διαθέσιμο. Δοκιμή του επίσημου GitHub mirror..." -ForegroundColor Yellow
-        Write-Host "  Αιτία: $($_.Exception.Message)" -ForegroundColor DarkYellow
+        Write-Host "gyan.dev is unavailable. Trying official GitHub mirror..." -ForegroundColor Yellow
+        Write-Host "  Reason: $($_.Exception.Message)" -ForegroundColor DarkYellow
         Remove-Item -LiteralPath $ArchivePath, $HashPath -Force -ErrorAction SilentlyContinue
     }
 
@@ -88,7 +96,7 @@ function Get-FfmpegPackage {
         }
     )
     if ($zipAssets.Count -lt 1) {
-        throw "Δεν βρέθηκε FFmpeg essentials ZIP στο τελευταίο GitHub release."
+        throw "Could not find FFmpeg essentials ZIP in the latest GitHub release."
     }
 
     $zipAsset = $zipAssets | Select-Object -First 1
@@ -98,7 +106,7 @@ function Get-FfmpegPackage {
         }
     ) | Select-Object -First 1
 
-    Write-Host "Λήψη FFmpeg $($release.tag_name) από GitHub..."
+    Write-Host "Downloading FFmpeg $($release.tag_name) from GitHub..."
     Invoke-DownloadWithRetry -Uri $zipAsset.browser_download_url -OutFile $ArchivePath -Headers $WebHeaders
 
     if ($hashAsset) {
@@ -111,7 +119,7 @@ function Get-FfmpegPackage {
         Set-Content -LiteralPath $HashPath -Value $Matches[1] -Encoding ASCII
     }
     else {
-        throw "Το GitHub release δεν περιέχει SHA-256 για το FFmpeg ZIP."
+        throw "GitHub release does not contain SHA-256 for the FFmpeg ZIP."
     }
 
     return "GitHub mirror"
@@ -126,11 +134,11 @@ function Install-PortableFfmpeg {
     )
 
     if (-not $missingTools) {
-        Write-Host "Έλεγχος portable FFmpeg: OK"
+        Write-Host "Checking portable FFmpeg: OK"
         return
     }
 
-    Write-Host "Το portable FFmpeg λείπει και θα εγκατασταθεί αυτόματα." -ForegroundColor Yellow
+    Write-Host "Portable FFmpeg is missing and will be installed automatically." -ForegroundColor Yellow
     $tempBase = [System.IO.Path]::GetTempPath()
     $tempRoot = Join-Path $tempBase ("audio-converter-ffmpeg-" + [guid]::NewGuid().ToString("N"))
     $archivePath = Join-Path $tempRoot "ffmpeg.zip"
@@ -143,28 +151,28 @@ function Install-PortableFfmpeg {
         $hashText = Get-Content -LiteralPath $hashPath -Raw
         $hashMatch = [regex]::Match($hashText, "[A-Fa-f0-9]{64}")
         if (-not $hashMatch.Success) {
-            throw "Δεν ήταν δυνατή η ανάγνωση του SHA-256 του FFmpeg."
+            throw "Could not read SHA-256 hash for FFmpeg."
         }
 
         $expectedHash = $hashMatch.Value.ToUpperInvariant()
         $actualHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToUpperInvariant()
         if ($actualHash -ne $expectedHash) {
-            throw "Ο έλεγχος SHA-256 του FFmpeg απέτυχε. Η λήψη απορρίφθηκε."
+            throw "FFmpeg SHA-256 checksum verification failed. Download rejected."
         }
 
-        Write-Host "Έλεγχος SHA-256: OK"
+        Write-Host "SHA-256 Verification: OK"
         $extractDir = Join-Path $tempRoot "extracted"
         Expand-Archive -LiteralPath $archivePath -DestinationPath $extractDir
 
         foreach ($tool in $requiredTools) {
             $matches = @(Get-ChildItem -LiteralPath $extractDir -Filter $tool -File -Recurse)
             if ($matches.Count -ne 1) {
-                throw "Δεν βρέθηκε ακριβώς ένα $tool μέσα στο πακέτο FFmpeg."
+                throw "Could not find exactly one $tool in the FFmpeg package."
             }
             Copy-Item -LiteralPath $matches[0].FullName -Destination (Join-Path $ProjectDir $tool) -Force
         }
 
-        Write-Host "Εγκατάσταση FFmpeg από $($downloadSource): OK"
+        Write-Host "FFmpeg installation from $($downloadSource): OK"
     }
     finally {
         $resolvedTempBase = [System.IO.Path]::GetFullPath($tempBase)
@@ -213,7 +221,7 @@ function Find-Python312 {
 
 try {
     Write-Host ""
-    Write-Host "=== Audio Converter m4a to mp3 - Εγκατάσταση ===" -ForegroundColor Cyan
+    Write-Host "=== Audio Converter m4a to mp3 - Installation ===" -ForegroundColor Cyan
 
     Install-PortableFfmpeg
 
@@ -221,26 +229,26 @@ try {
     if (-not $pythonCommand) {
         $winget = Get-Command "winget.exe" -ErrorAction SilentlyContinue
         if (-not $winget) {
-            throw "Δεν βρέθηκε Python 3.12 ούτε winget. Εγκατάστησε την Python 3.12 από το python.org και εκτέλεσε ξανά το install.bat."
+            throw "Python 3.12 and winget were not found. Please install Python 3.12 from python.org and run install.bat again."
         }
 
-        Write-Host "Η Python 3.12 δεν βρέθηκε. Αυτόματη εγκατάσταση μέσω winget..." -ForegroundColor Yellow
+        Write-Host "Python 3.12 was not found. Installing automatically via winget..." -ForegroundColor Yellow
         & $winget.Source install --id Python.Python.3.12 --exact --scope user --silent --accept-package-agreements --accept-source-agreements
         if ($LASTEXITCODE -ne 0) {
-            throw "Η εγκατάσταση της Python 3.12 απέτυχε με κωδικό $LASTEXITCODE."
+            throw "Python 3.12 installation via winget failed with exit code $LASTEXITCODE."
         }
 
         $pythonCommand = @(Find-Python312)
         if (-not $pythonCommand) {
-            throw "Η Python εγκαταστάθηκε αλλά δεν εντοπίστηκε. Κλείσε το παράθυρο και εκτέλεσε ξανά το install.bat."
+            throw "Python was installed but could not be detected. Please close this window and run install.bat again."
         }
     }
     else {
-        Write-Host "Έλεγχος Python 3.12: OK"
+        Write-Host "Checking Python 3.12: OK"
     }
 
     if (-not (Test-Path -LiteralPath $VenvPython)) {
-        Write-Host "Δημιουργία του virtual environment .venv..."
+        Write-Host "Creating virtual environment (.venv)..."
         $pythonExe = $pythonCommand[0]
         $pythonArgs = @()
         if ($pythonCommand.Count -gt 1) {
@@ -248,32 +256,32 @@ try {
         }
         & $pythonExe @pythonArgs -m venv $VenvDir
         if ($LASTEXITCODE -ne 0) {
-            throw "Η δημιουργία του .venv απέτυχε."
+            throw "Failed to create .venv virtual environment."
         }
     }
     else {
-        Write-Host "Έλεγχος virtual environment .venv: OK"
+        Write-Host "Checking virtual environment (.venv): OK"
     }
 
-    Write-Host "Έλεγχος Python dependencies μέσα στο .venv..."
+    Write-Host "Installing Python dependencies into .venv..."
     & $VenvPython -m pip install --disable-pip-version-check -r $Requirements
     if ($LASTEXITCODE -ne 0) {
-        throw "Η εγκατάσταση των Python dependencies απέτυχε."
+        throw "Failed to install Python dependencies."
     }
 
     & $VenvPython -c "import json, subprocess, tkinter; from tkinterdnd2 import DND_FILES, TkinterDnD; tkinter.Tcl()"
     if ($LASTEXITCODE -ne 0) {
-        throw "Ο τελικός έλεγχος Python και Tkinter απέτυχε."
+        throw "Verification of Python, Tkinter, and Drag & Drop failed."
     }
-    Write-Host "Έλεγχος Python/Tkinter/Drag and Drop: OK"
+    Write-Host "Verification (Python/Tkinter/Drag and Drop): OK"
 
     Write-Host ""
-    Write-Host "Η εγκατάσταση ολοκληρώθηκε επιτυχώς." -ForegroundColor Green
-    Write-Host "Άνοιξε το run.bat για να ξεκινήσεις την εφαρμογή."
+    Write-Host "Installation completed successfully." -ForegroundColor Green
+    Write-Host "Double-click run.bat to launch Audio Converter m4a to mp3."
 }
 catch {
     Write-Host ""
-    Write-Host "ΣΦΑΛΜΑ: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "Έλεγξε τη σύνδεση Internet και εκτέλεσε ξανά το install.bat." -ForegroundColor Yellow
+    Write-Host "ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Please check your Internet connection and run install.bat again." -ForegroundColor Yellow
     exit 1
 }
