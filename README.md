@@ -8,7 +8,129 @@
 **Creator:** Alexandros - Ermis Tsourapas (SV1RVP)  
 **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
 
+[🇬🇧 English](#-english) • [🇬🇷 Ελληνικά](#-ελληνικά)
+
 ---
+
+# 🇬🇧 English
+
+Native Windows GUI application for batch converting M4A audio files to MP3 or WAV. Conversions run multi-threaded in the background using FFmpeg, keeping the user interface fluid, responsive, and stutter-free.
+
+---
+
+## 🌟 Features
+
+- **Batch Conversion**: Select and convert multiple M4A files to MP3 or WAV in a single operation.
+- **Drag & Drop**: Direct drag & drop support for files and folders onto the application window (`tkinterdnd2`).
+- **Conversion Queue**: Detailed table showing file name, duration, size, status, and real-time progress per item.
+- **Queue Management**: Remove selected files or clear the entire queue with ease.
+- **MP3 Quality Selection**: Choose bitrates from 128, 192, 256, or 320 kbps (CBR / LAME).
+- **Portable FFmpeg**: Completely standalone operation without requiring manual Windows `PATH` configuration.
+- **Data Protection**: Confirmation dialog prior to overwriting existing files.
+- **Modern UI**: Clean, responsive layout with **Light** and **Dark** theme support.
+- **Real-Time Progress**: Live conversion percentage with instant queue cancellation.
+- **Custom Output Folder**: Specify a custom destination folder or save next to each source file, with a one-click button to open the folder in Explorer.
+- **Bilingual Interface**: Full English (default) and Greek localization, switchable on the fly (`🇬🇧 EN` / `🇬🇷 EL`) without restarting.
+- **Preference Persistence**: Automatically preserves user settings (language, bitrate, theme, output folder).
+- **GitHub Auto-Updater**: One-click update checking directly from the header or Help menu with release notes and automatic installation.
+- **Automated Installer**: Automated script for Python 3.12, local `.venv` setup, and FFmpeg download with SHA-256 checksum verification.
+
+---
+
+## 💻 System Requirements
+
+- **Windows 10** or **Windows 11** (64-bit).
+- **PowerShell 5.1** or newer.
+- Active Internet connection during initial setup (to download dependencies and FFmpeg).
+- `winget` is automatically used only if Python 3.12 is not already detected.
+
+> [!NOTE]
+> The portable FFmpeg builds downloaded by the installer require Windows 10 or later.
+
+---
+
+## 🚀 Getting Started (Installation)
+
+1. Clone or download the repository:
+   ```bash
+   git clone https://github.com/SV1RVP/Audio-Converter-m4a-to-mp3.git
+   cd "Audio Converter m4a to mp3"
+   ```
+2. Double-click **`install.bat`**.
+3. Wait for the `.venv` setup and required downloads to complete.
+
+The installer automatically handles:
+1. Downloading the official FFmpeg essentials build (with retry logic and GitHub mirror fallback).
+2. Mandatory integrity verification via **SHA-256 hash** before extraction.
+3. Detecting or installing Python 3.12.
+4. Setting up the isolated local `.venv` environment.
+5. Installing `tkinterdnd2` for native drag & drop.
+
+---
+
+## ⚡ Launching the Application
+
+Double-click **`run.bat`**. The application starts independently using the isolated `.venv` Python environment. If the virtual environment does not exist yet, the installation runs automatically.
+
+---
+
+## 🔄 Automatic Updates
+
+The application includes a zero-dependency GitHub update mechanism:
+- **Header Button («🔄 Check»)**: Checks for newer releases in the repository.
+- **Update Notification**: When an update is detected, the button displays `⚡ vX.X.X` and opens a release notes dialog.
+- **One-Click Update**: Clicking «⚡ Update Now» downloads the update archive, updates code files in-place, and restarts the app while preserving your FFmpeg binaries and saved settings.
+
+---
+
+## 🌐 Languages
+
+The app natively supports:
+- **English** (Default)
+- **Ελληνικά** (Greek)
+
+Switch languages anytime:
+1. Click the toggle button in the top-right header (`🇬🇧 EN` / `🇬🇷 EL`).
+2. Via the menu bar: **Language** -> select **English** or **Ελληνικά**.
+
+All UI components (buttons, labels, dialogs, queue columns, and status messages) update immediately without restarting.
+
+---
+
+## 📁 File Output
+
+Converted files are saved with the same base name and `.mp3` or `.wav` extension either next to the source files or in the chosen output directory. If an identically named file already exists, a confirmation prompt asks before overwriting.
+
+---
+
+## ❓ Troubleshooting (FAQ)
+
+- **PowerShell Execution Policy Error**:  
+  If script execution is blocked when running `install.bat`, open PowerShell as Administrator and run:
+  ```powershell
+  Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+  ```
+- **Manual FFmpeg Setup**:  
+  If your network restricts downloads, place `ffmpeg.exe` and `ffprobe.exe` directly into the root application directory.
+
+---
+
+## ⚖️ Licensing
+
+- Application source code is licensed under **GNU Affero General Public License v3.0 only**. See [LICENSE](LICENSE).
+- FFmpeg is third-party software under GPLv3 / LGPL. Binaries are not stored in this repository. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [FFMPEG_LICENSE.txt](FFMPEG_LICENSE.txt).
+
+---
+
+## 🤝 Security & Contributions
+
+- To report vulnerabilities, review [SECURITY.md](SECURITY.md).
+- To contribute code, review [CONTRIBUTING.md](CONTRIBUTING.md).
+- Detailed version changes are tracked in [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+# 🇬🇷 Ελληνικά
 
 Γραφική εφαρμογή Windows (Native GUI) για μαζική μετατροπή αρχείων M4A σε MP3 ή WAV. Η μετατροπή εκτελείται στο παρασκήνιο (multi-threaded) με το FFmpeg, ώστε το περιβάλλον να παραμένει άμεσο και πλήρως λειτουργικό.
 
